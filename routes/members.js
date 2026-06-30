@@ -1,0 +1,164 @@
+const express = require("express");
+const initialMembers = require("../fixtures/members.json");
+
+// ⚠️ 寫作業前先 `npm start` 打開 http://localhost:3000/docs 看 Swagger UI 的規格。
+// 💡 /* 作答區 ... */ 是答題提示區，取消註解後填入你的程式碼。
+
+// ───────────────────────────────────────────────────────────
+// TODO 任務一：初始化 state + 內部 helpers
+// ───────────────────────────────────────────────────────────
+
+// 1. 複製 initialMembers，不直接改外部陣列
+const members = [...initialMembers];
+
+// 2. 下一個新增會員要使用的 id
+let nextId = 5;
+
+// 3. 兩個內部 helper 函式
+
+// 函式一：filterByQuery(list, query)：
+// - 依據 query.level 篩選，沒帶就回全部
+// - 任務二的 GET / 會使用到這個函式
+function filterByQuery(list, query) {
+  const { level } = query;
+
+  if (!level) return list;
+
+  const filtered = list.filter((m) => m.level === level);
+
+  return filtered;
+}
+
+// 函式二：validateBody(body)
+// - 驗證 body 有沒有 name、level 欄位，要擋 null / undefined / {}
+// - 驗證通過 → { valid: true }
+// - 驗證失敗 → { valid: false, error: '缺 name 或 level' }
+// - 任務三的 POST / 會使用到這個函式
+function validateBody(body) {
+  const { name, level } = body;
+
+  if (name == null || level == null) return { valid: false, error: "Missing name or level field" };
+
+  return { valid: true };
+}
+
+const router = express.Router();
+// 此 router 掛在 app.js 的 '/members'，以下路由皆帶此前綴。舉例來說：
+// - router.get('/') → GET /members
+// - router.get('/:id') → GET /members/:id
+
+// ───────────────────────────────────────────────────────────
+// TODO 任務二：GET / 和 GET /:id
+// ───────────────────────────────────────────────────────────
+
+// GET /
+// - 輸入：req.query.level 可帶 'VIP' | 'normal'（選填）
+// - 輸出：200 + [{ id, name, level }, ...]
+// - 提示：filterByQuery(members, req.query)
+router.get("/", (req, res) => {
+  const { level } = req.query;
+  const isLevelValid = ["VIP", "normal"].includes(level);
+
+  if (level !== undefined && !isLevelValid) {
+    return res.status(400).json({ status: "error", message: "Parameter 'level' must be either 'VIP' or 'normal'" });
+  }
+
+  const filtered = filterByQuery(members, req.query);
+  res.status(200).json(filtered);
+});
+
+// GET /:id
+// - 輸入：req.params.id（string，需使用 Number() 轉換）
+// - 輸出：200 + { id, name, level }，或 404 + { error: '會員不存在' }（找不到時）
+// - 提示：members.find，找不到時結果是 undefined
+router.get("/:id", (req, res) => {
+  const id = +req.params.id;
+
+  const member = members.find((m) => m.id === id);
+
+  if (!member) {
+    res.status(404).json({ status: "error", message: "Member not found" });
+    return;
+  }
+
+  res.status(200).json({ status: "success", data: member });
+});
+
+// ───────────────────────────────────────────────────────────
+// TODO 任務三：POST /
+// ───────────────────────────────────────────────────────────
+
+// POST /
+// - 輸入：body = { name: string, level: 'VIP' | 'normal' }
+// - 輸出：201 + 新會員物件（id 自動配），或 400 + { error: '缺 name 或 level' }（驗證失敗）
+// - 提示：validateBody(req.body) 驗證；通過後用 spread 將 req.body 的欄位與 nextId 自動遞增的 id 合為新物件，push 進 members
+// - 範例：POST /members body { name: '阿文', level: 'VIP' } → 201 { id: 5, name: '阿文', level: 'VIP' }
+router.post("/", (req, res) => {
+  const body = req.body;
+  const isBodyValid = validateBody(body);
+
+  if (!isBodyValid) {
+    res.status(400).json({ status: "error", message: "Missing name or level field" });
+    return;
+  }
+
+  const newMember = { id: nextId++, ...body };
+  members.push(newMember);
+  res.status(201).json({ status: "success", data: newMember });
+});
+
+// ───────────────────────────────────────────────────────────
+// TODO 任務四：PUT /:id 和 DELETE /:id
+// ───────────────────────────────────────────────────────────
+
+// PUT /:id
+// - 輸入：req.params.id（string，需 Number() 轉換）、body（部分欄位，例如只傳 { level: 'normal' }）
+// - 輸出：200 + merge 後的會員，或 404 + { error: '會員不存在' }（找不到時）
+// - 提示：members.findIndex 找索引，-1 回應 404；找到索引則使用 spread 合併 members[idx] 與 req.body（req.body 需注意順序來覆蓋舊欄位），最後將結果存回 members[idx]
+// - 範例：PUT /members/1 body { level: 'normal' } → 200 { id: 1, name: '小華', level: 'normal' }（name 被保留）
+router.put("/:id", (req, res) => {
+  const id = +req.params.id;
+  const { name, level } = req.body;
+  // Allow level to be omitted for partial updates.
+  // If level is provided, it must be either "VIP" or "normal".
+  const isLevelValid = level === undefined || ["VIP", "normal"].includes(level);
+
+  const idx = members.findIndex((m) => m.id === id);
+
+  if (idx === -1) {
+    res.status(404).json({ status: "error", message: "Member not found" });
+    return;
+  }
+
+  if (!isLevelValid) {
+    res.status(400).json({ status: "error", message: "Missing or invalid level field" });
+    return;
+  }
+
+  members[idx] = { ...members[idx], ...req.body };
+
+  res.status(200).json({
+    status: "success",
+    data: members[idx],
+  });
+});
+
+// DELETE /:id
+// - 輸入：req.params.id（string，需 Number() 轉換）
+// - 輸出：204（無 body），或 404 + { error: '會員不存在' }（找不到時）
+// - 提示：members.findIndex 找索引，-1 回應 404；找到索引則 splice 移除，再設定 status 204 並以 .end() 結束回應（204 不帶 body）
+router.delete("/:id", (req, res) => {
+  const id = +req.params.id;
+  const idx = members.findIndex((m) => m.id === id);
+
+  if (idx === -1) {
+    res.status(404).json({ status: "error", message: "Member not found" });
+    return;
+  }
+
+  members.splice(idx, 1);
+
+  res.status(204).end();
+});
+
+module.exports = router;
