@@ -60,7 +60,7 @@ router.get("/", (req, res) => {
   const isLevelValid = ["VIP", "normal"].includes(level);
 
   if (level !== undefined && !isLevelValid) {
-    return res.status(400).json({ status: "error", message: "Parameter 'level' must be either 'VIP' or 'normal'" });
+    return res.status(400).json({ error: "Parameter 'level' must be either 'VIP' or 'normal'" });
   }
 
   const filtered = filterByQuery(members, req.query);
@@ -77,11 +77,11 @@ router.get("/:id", (req, res) => {
   const member = members.find((m) => m.id === id);
 
   if (!member) {
-    res.status(404).json({ status: "error", message: "Member not found" });
+    res.status(404).json({ error: "Member not found" });
     return;
   }
 
-  res.status(200).json({ status: "success", data: member });
+  res.status(200).json(member);
 });
 
 // ───────────────────────────────────────────────────────────
@@ -95,16 +95,16 @@ router.get("/:id", (req, res) => {
 // - 範例：POST /members body { name: '阿文', level: 'VIP' } → 201 { id: 5, name: '阿文', level: 'VIP' }
 router.post("/", (req, res) => {
   const body = req.body;
-  const isBodyValid = validateBody(body);
+  const { valid } = validateBody(body);
 
-  if (!isBodyValid) {
-    res.status(400).json({ status: "error", message: "Missing name or level field" });
+  if (!valid) {
+    res.status(400).json({ error: "Missing name or level field" });
     return;
   }
 
   const newMember = { id: nextId++, ...body };
   members.push(newMember);
-  res.status(201).json({ status: "success", data: newMember });
+  res.status(201).json(newMember);
 });
 
 // ───────────────────────────────────────────────────────────
@@ -126,21 +126,18 @@ router.put("/:id", (req, res) => {
   const idx = members.findIndex((m) => m.id === id);
 
   if (idx === -1) {
-    res.status(404).json({ status: "error", message: "Member not found" });
+    res.status(404).json({ error: "Member not found" });
     return;
   }
 
   if (!isLevelValid) {
-    res.status(400).json({ status: "error", message: "Missing or invalid level field" });
+    res.status(400).json({ error: "Missing or invalid level field" });
     return;
   }
 
   members[idx] = { ...members[idx], ...req.body };
 
-  res.status(200).json({
-    status: "success",
-    data: members[idx],
-  });
+  res.status(200).json(members[idx]);
 });
 
 // DELETE /:id
@@ -152,7 +149,7 @@ router.delete("/:id", (req, res) => {
   const idx = members.findIndex((m) => m.id === id);
 
   if (idx === -1) {
-    res.status(404).json({ status: "error", message: "Member not found" });
+    res.status(404).json({ error: "Member not found" });
     return;
   }
 

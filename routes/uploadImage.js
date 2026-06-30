@@ -31,24 +31,21 @@ router.post("/", (req, res) => {
 
   form.parse(req, (err, fields, files) => {
     if (err) {
-      res.status(500).json({ status: "error", message: err.message });
+      res.status(500).json({ error: err.message });
       return;
     }
 
     const img = files.image?.[0];
 
     if (!img) {
-      res.status(400).json({ status: "error", message: "No file uploaded" });
+      res.status(400).json({ error: "No file uploaded" });
       return;
     }
 
     res.status(200).json({
-      status: "success",
-      data: {
-        filename: img.originalFilename,
-        sizeKB: Math.round(img.size / 1024),
-        savedPath: img.filepath,
-      },
+      filename: img.originalFilename,
+      sizeKB: Math.round(img.size / 1024),
+      savedPath: img.filepath,
     });
   });
 });
