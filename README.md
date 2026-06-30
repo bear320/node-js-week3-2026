@@ -19,7 +19,6 @@
 
 不可把 `.env` 推上 GitHub（`.gitignore` 目前已有排除）
 
-
 ### Step 3：寫作業前先打開 Swagger UI
 
 啟動 server：`npm start`，開啟瀏覽器前往 `http://localhost:3000/docs`。Swagger UI 已預先設定好，啟動後即可查看。
@@ -64,7 +63,6 @@ function filterByQuery(list, query) { ... }
 /* 作答區
 function validateBody(body) { ... }
 */
-
 ```
 
 ### Step 5：測試你的程式碼
@@ -74,11 +72,10 @@ function validateBody(body) { ... }
 npm start
 
 # 執行完整 Jest 測試（繳交作業前需整體通過）
-npm test        
+npm test
 ```
 
 （這個部分的詳細可參照下方 **驗證與測試** 的說明）
-
 
 ## 專案架構
 
@@ -106,34 +103,34 @@ node-js-week3-2026/
 
 ### 【任務一：初始化 state + 內部 helpers】
 
-* `members`：複製 `initialMembers` 作為初始資料；`nextId`：下一個可用 id
-* `filterByQuery(list, query)`：依 `query.level` 篩選，沒帶回全部
-* `validateBody(body)`：擋 null / undefined / `{}`，回應 `{ valid, error? }`
+- `members`：複製 `initialMembers` 作為初始資料；`nextId`：下一個可用 id
+- `filterByQuery(list, query)`：依 `query.level` 篩選，沒帶回全部
+- `validateBody(body)`：擋 null / undefined / `{}`，回應 `{ valid, error? }`
 
 ### 【任務二：GET /members + /:id】
 
-* `router.get('/', ...)` 用 `filterByQuery` 處理篩選
-* `router.get('/:id', ...)` 用 `members.find`，找不到回應 **404**
+- `router.get('/', ...)` 用 `filterByQuery` 處理篩選
+- `router.get('/:id', ...)` 用 `members.find`，找不到回應 **404**
 
 ### 【任務三：POST /members】
 
-* 搭配 `validateBody` 來進行驗證，如果失敗就回應 **400**
-* 成功新增會員（nextId 遞增），回應 **201**
+- 搭配 `validateBody` 來進行驗證，如果失敗就回應 **400**
+- 成功新增會員（nextId 遞增），回應 **201**
 
 ### 【任務四：PUT + DELETE /members/:id】
 
-* PUT：找不到會員就回應 **404**，成功編輯會員則回應 **200**
-* DELETE：找不到會員就回應 **404**，成功移除後回應 **204 無 body**
+- PUT：找不到會員就回應 **404**，成功編輯會員則回應 **200**
+- DELETE：找不到會員就回應 **404**，成功移除後回應 **204 無 body**
 
 ### 【任務五：POST /uploadImage】
 
-* 用 `formidable` 解析 `image` 欄位
-* 上傳成功回應 **200** `{ filename, sizeKB, savedPath }`；沒帶 file 則回應 **400**
+- 用 `formidable` 解析 `image` 欄位
+- 上傳成功回應 **200** `{ filename, sizeKB, savedPath }`；沒帶 file 則回應 **400**
 
 ### 【任務六：app.js 組裝】
 
-* 依序掛載：解跨域、JSON body 解析等 middleware，接著是 Swagger UI（已預先提供），以及會員與圖片上傳的 router
-* `module.exports = app`（不需呼叫 `app.listen`）
+- 依序掛載：解跨域、JSON body 解析等 middleware，接著是 Swagger UI（已預先提供），以及會員與圖片上傳的 router
+- `module.exports = app`（不需呼叫 `app.listen`）
 
 ---
 
@@ -160,8 +157,8 @@ node-js-week3-2026/
 
 測試結果條列：
 
-* ✓ 表示測試通過
-* ✕ 表示測試失敗
+- ✓ 表示測試通過
+- ✕ 表示測試失敗
 
 最終看到 `Tests: 16 passed, 16 total` 即代表全數通過。
 
@@ -195,4 +192,3 @@ A：注意 `app.use(cors())` 的順序唷（要在最前面）
 
 **Q：為什麼 `app.js` 不進行 `app.listen()`？**
 A：主要分離「組裝」跟「啟動」：`app.js` 只專注 export app、`server.js` 才進行 listen。這樣 `test.js` 用 supertest 直接戳 app instance，就不會佔用一個 port。
-# node-js-week3-2026
